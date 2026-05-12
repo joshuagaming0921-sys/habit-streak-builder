@@ -155,7 +155,7 @@
             <p class="subtitle">An AI-Enhanced Behavioral Consistency System</p>
         </div>
 
-        <input type="email" id="email" placeholder="Student Email">
+        <input type="email" id="email" placeholder="Gordon College Email (@gordoncollege.edu.ph)">
         <input type="password" id="pass" placeholder="Password">
 
         <div class="terms-row">
@@ -175,7 +175,7 @@
 
     <script type="module">
         import { auth } from './firebase-config.js';
-        import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const provider = new GoogleAuthProvider();
         const startSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
@@ -186,6 +186,21 @@
         const emailInput = document.getElementById('email');
         const passInput = document.getElementById('pass');
 
+        const ALLOWED_DOMAIN = "gordoncollege.edu.ph";
+
+        // Logic to verify if user email matches the school domain
+        const verifyDomainAndRedirect = (user) => {
+            if (user.email && user.email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+                startSound.play();
+                setTimeout(() => window.location.href='dashboard.html', 1500);
+            } else {
+                // Not a school account? Sign them out immediately.
+                signOut(auth).then(() => {
+                    alert(`Access Denied: Please use your official @${ALLOWED_DOMAIN} account.`);
+                });
+            }
+        };
+
         // Toggle button state based on checkbox
         checkbox.onchange = () => {
             const isChecked = checkbox.checked;
@@ -194,15 +209,10 @@
             loginBtn.style.color = isChecked ? 'white' : '#64748b';
         };
 
-        const handleSuccess = () => {
-            startSound.play();
-            setTimeout(() => window.location.href='dashboard.html', 1500);
-        };
-
         // Email/Pass Login
         loginBtn.onclick = () => {
             signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
-                .then(handleSuccess)
+                .then((result) => verifyDomainAndRedirect(result.user))
                 .catch(e => alert(e.message));
         };
 
@@ -213,7 +223,7 @@
                 return;
             }
             signInWithPopup(auth, provider)
-                .then(handleSuccess)
+                .then((result) => verifyDomainAndRedirect(result.user))
                 .catch(e => alert(e.message));
         };
     </script>
