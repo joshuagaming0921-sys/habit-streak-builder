@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hero Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root { 
+            --p-grad: linear-gradient(135deg, #ff6b00 0%, #ff3399 100%); 
+            --ai-grad: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); 
+            --bg: #0f172a; 
+        }
+        body { display: flex; background: var(--bg); color: white; margin: 0; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
+        
+        aside { width: 240px; height: 100vh; background: #1e293b; padding: 30px 20px; position: fixed; display: flex; flex-direction: column; z-index: 100; box-sizing: border-box; }
+        main { margin-left: 240px; padding: 40px 20px; width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
+        
+        .nav-item { display: flex; align-items: center; padding: 12px 15px; color: #94a3b8; text-decoration: none; border-radius: 10px; margin-bottom: 5px; transition: 0.2s; }
+        .nav-item i { margin-right: 10px; font-size: 1.1rem; width: 20px; text-align: center; }
+        .nav-item.active { background: var(--p-grad); color: white; }
+        
+        .logout-link { width: 100%; background: none; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 15px; border-radius: 10px; cursor: pointer; text-align: left; margin-top: auto; transition: 0.3s; font-family: inherit; }
+        .logout-link:hover { color: #ef4444; border-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+        /* Boss Section */
+        #bossSection { width: 100%; max-width: 500px; margin-bottom: 25px; text-align: center; background: rgba(30, 41, 59, 0.8); padding: 25px; border-radius: 20px; border: 2px solid #ef4444; box-shadow: 0 10px 30px rgba(239, 68, 68, 0.2); }
+        .boss-hp-bg { width: 100%; height: 20px; background: #0f172a; border-radius: 10px; overflow: hidden; margin-top: 15px; border: 1px solid #334155; }
+        #bossHealthBar { height: 100%; background: linear-gradient(90deg, #ff3399, #ef4444); width: 100%; transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        #aiOracleCard { width: 100%; max-width: 500px; margin-bottom: 25px; background: rgba(30, 41, 59, 0.8); border-radius: 20px; padding: 20px; border-left: 5px solid #8b5cf6; position: relative; }
+        
+        .rank-container { text-align: center; background: rgba(30, 41, 59, 0.5); padding: 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 500px; }
+        .level-badge { font-size: 50px; font-weight: 900; background: var(--p-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .exp-bar { width: 100%; height: 12px; background: #334155; border-radius: 10px; margin: 15px 0; overflow: hidden; }
+        .exp-fill { height: 100%; background: var(--p-grad); width: 0%; transition: 1.5s; }
+
+        .roadmap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; width: 100%; max-width: 500px; margin-top: 20px; }
+        .rank-card { background: rgba(30, 41, 59, 0.5); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+
+        @media (max-width: 768px) {
+            aside { width: 100%; height: 70px; position: fixed; bottom: 0; top: auto; flex-direction: row; padding: 0; justify-content: space-around; align-items: center; }
+            aside h2, .logout-link { display: none; }
+            main { margin-left: 0; padding-bottom: 100px; }
+            .nav-item { flex-direction: column; font-size: 10px; padding: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <h2 style="font-weight: 900; margin-bottom: 30px; padding-left: 15px; font-size: 1.2rem;">STREAK QUEST</h2>
+        <nav style="display: contents;">
+            <a href="dashboard.html" class="nav-item active"><i class="fa-solid fa-house"></i><span>Home</span></a>
+            <a href="habits.html" class="nav-item"><i class="fa-solid fa-scroll"></i><span>Habits</span></a>
+            <a href="profile.html" class="nav-item"><i class="fa-solid fa-user-shield"></i><span>Hero</span></a>
+            <a href="settings.html" class="nav-item"><i class="fa-solid fa-gear"></i><span>Settings</span></a>
+            <button id="logoutBtn" class="logout-link"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        </nav>
+    </aside>
+
+    <main>
+        <div id="bossSection">
+            <div id="bossIcon" style="font-size: 50px;">👹</div>
+            <h3 style="margin: 10px 0; letter-spacing: 2px;">THE BOSS</h3>
+            <div class="boss-hp-bg"><div id="bossHealthBar"></div></div>
+            <p id="bossStatus" style="font-size: 14px; color: #94a3b8; margin-top: 10px; font-weight: bold;">Boss HP: 100%</p>
+        </div>
+
+        <div id="aiOracleCard">
+            <h4 style="color: #8b5cf6; margin: 0; font-size: 10px; letter-spacing: 2px;">AI PREDICTIVE NUDGE</h4>
+            <p id="aiInsightText" style="margin: 10px 0; font-size: 14px; color: #cbd5e1;">Analyzing quest patterns...</p>
+        </div>
+
+        <div class="rank-container">
+            <div class="level-badge" id="levelText">LVL 1</div>
+            <h2 id="rankTitle" style="color: #ff6b00; text-transform: uppercase; margin: 5px 0; font-size: 18px;">Newbie</h2>
+            <div class="exp-bar"><div class="exp-fill" id="expFill"></div></div>
+            <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+                <div><p style="font-size: 10px; color: #94a3b8; margin: 0;">TOTAL STREAK</p><h3 id="totalStreak" style="color: #22c55e; margin: 5px 0;">0</h3></div>
+                <div><p style="font-size: 10px; color: #94a3b8; margin: 0;">ACTIVE HABITS</p><h3 id="activeHabits" style="color: #f59e0b; margin: 5px 0;">0</h3></div>
+            </div>
+        </div>
+
+        <div class="roadmap-grid">
+            <div class="rank-card">🥚<h4 style="margin: 5px 0;">Newbie</h4></div>
+            <div class="rank-card">🛡️<h4 style="margin: 5px 0;">Vanguard</h4></div>
+            <div class="rank-card">⚔️<h4 style="margin: 5px 0;">Elite</h4></div>
+            <div class="rank-card">👑<h4 style="margin: 5px 0;">Legend</h4></div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        onValue(ref(db, 'users/hero_01/habits'), (snap) => {
+            const data = snap.val();
+            if (!data) return;
+
+            let totalGoalDays = 0;
+            let currentTotalStreak = 0;
+            let questCount = 0;
+
+            Object.values(data).forEach(h => {
+                totalGoalDays += (parseInt(h.goalDays) || 1);
+                currentTotalStreak += (parseInt(h.streak) || 0);
+                questCount++;
+            });
+
+            // BOSS HEALTH CALCULATION
+            // HP = 100% minus the percentage of overall goals achieved
+            let progressFactor = (currentTotalStreak / totalGoalDays) * 100;
+            let remainingHP = Math.max(0, 100 - Math.round(progressFactor));
+
+            // Update Boss UI
+            const hpBar = document.getElementById('bossHealthBar');
+            const hpText = document.getElementById('bossStatus');
+            const bossIcon = document.getElementById('bossIcon');
+
+            hpBar.style.width = remainingHP + "%";
+            hpText.innerText = remainingHP > 0 ? `Boss HP: ${remainingHP}%` : "BOSS DEFEATED! 🎉";
+            bossIcon.innerText = remainingHP > 0 ? "👹" : "💀";
+
+            // LEVEL LOGIC (1 Level every 5 total streak points)
+            const lvl = Math.floor(currentTotalStreak / 5) + 1;
+            document.getElementById('levelText').innerText = "LVL " + lvl;
+            document.getElementById('expFill').style.width = ((currentTotalStreak % 5) / 5) * 100 + "%";
+            document.getElementById('totalStreak').innerText = currentTotalStreak;
+            document.getElementById('activeHabits').innerText = questCount;
+
+            // RANK TITLE
+            let rank = lvl >= 31 ? "Mythic Legend" : lvl >= 16 ? "Elite Knight" : lvl >= 6 ? "Vanguard" : "Newbie";
+            document.getElementById('rankTitle').innerText = rank;
+
+            // AI INSIGHT
+            const atRisk = Object.values(data).sort((a,b) => a.streak - b.streak)[0];
+            document.getElementById('aiInsightText').innerText = remainingHP > 0 
+                ? `Focus on "${atRisk.name}". Defeating it will deal massive damage to the King.`
+                : "The King is dead. Maintain your streaks to prevent his resurrection.";
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            if(confirm("Exit journey?")) signOut(auth).then(() => window.location.href = 'login.html');
+        });
+    </script>
+</body>
+</html>

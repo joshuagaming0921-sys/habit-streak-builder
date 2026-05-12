@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quest Log</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root { 
+            --p-grad: linear-gradient(135deg, #ff6b00 0%, #ff3399 100%); 
+            --gold: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); 
+            --bg: #f8fafc; 
+        }
+        body { display: flex; background: var(--bg); margin: 0; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
+        
+        aside { width: 240px; height: 100vh; background: #1e293b; color: white; padding: 30px 20px; position: fixed; display: flex; flex-direction: column; z-index: 100; box-sizing: border-box; }
+        nav { display: flex; flex-direction: column; height: 100%; width: 100%; }
+        .nav-item { display: flex; align-items: center; padding: 12px 15px; color: #94a3b8; text-decoration: none; border-radius: 10px; margin-bottom: 5px; transition: 0.2s; }
+        .nav-item i { margin-right: 10px; font-size: 1.1rem; width: 20px; text-align: center; }
+        .nav-item.active { background: var(--p-grad); color: white; }
+        
+        .logout-btn { width: 100%; background: none; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 12px; border-radius: 10px; cursor: pointer; text-align: left; margin-top: auto; display: flex; align-items: center; font-family: inherit; transition: 0.3s; }
+        .logout-btn:hover { color: #ef4444; border-color: #ef4444; }
+
+        main { margin-left: 240px; padding: 40px 20px; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
+        #habitList { width: 100%; display: flex; flex-direction: column; align-items: center; }
+        
+        .habit-card { 
+            background: white; border-radius: 20px; padding: 25px; margin-top: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); position: relative; border-left: 6px solid #ff6b00; 
+            width: 100%; max-width: 600px; box-sizing: border-box; color: #1e293b; transition: 0.3s;
+        }
+        .completed-card { border-left-color: #f59e0b; background: #fffdf5; }
+        .streak-badge { font-size: 18px; font-weight: 800; color: #ff6b00; margin: 10px 0; }
+        
+        .mark-done-btn { width: 100%; margin-top: 15px; padding: 14px; border-radius: 12px; border: none; background: #22c55e; color: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .mark-done-btn:active { transform: scale(0.95); }
+        .completed-btn { background: var(--gold) !important; color: #78350f !important; cursor: default !important; }
+        .delete-btn { position: absolute; top: 20px; right: 20px; color: #ef4444; border: none; background: none; cursor: pointer; padding: 5px; opacity: 0.5; }
+        .delete-btn:hover { opacity: 1; }
+
+        @media (max-width: 768px) {
+            aside { width: 100%; height: 75px; position: fixed; bottom: 0; top: auto; flex-direction: row; padding: 0; border-top: 1px solid rgba(255,255,255,0.1); }
+            aside h2 { display: none; }
+            nav { flex-direction: row; width: 100%; justify-content: space-around; align-items: center; }
+            main { margin-left: 0; padding: 20px 15px 100px 15px; }
+            .nav-item, .logout-btn { flex-direction: column; font-size: 10px; padding: 5px; border: none; width: auto; margin: 0; background: none !important; }
+            .nav-item i, .logout-btn i { margin: 0 0 4px 0; font-size: 1.4rem; }
+            .logout-btn span { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <h2 style="font-weight: 900; margin-bottom: 30px; padding-left: 15px;">STREAK QUEST</h2>
+        <nav>
+            <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Home</span></a>
+            <a href="habits.html" class="nav-item active"><i class="fa-solid fa-scroll"></i><span>Habits</span></a>
+            <a href="profile.html" class="nav-item"><i class="fa-solid fa-user-shield"></i><span>Hero</span></a>
+            <a href="settings.html" class="nav-item"><i class="fa-solid fa-gear"></i><span>Settings</span></a>
+            <button id="logoutBtn" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></button>
+        </nav>
+    </aside>
+
+    <main>
+        <button onclick="addNewHabit()" style="background:var(--p-grad); color:white; border:none; padding:15px 25px; border-radius:15px; cursor:pointer; font-weight:bold; width: 100%; max-width: 400px; font-size: 16px; box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);">+ Start New Habit</button>
+        <div id="habitList"></div>
+    </main>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        onValue(ref(db, 'users/hero_01/habits'), (snap) => {
+            const list = document.getElementById('habitList');
+            list.innerHTML = "";
+            const data = snap.val();
+            
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    const h = data[key];
+                    const isDone = h.streak >= h.goalDays;
+                    
+                    let streakIcon = "🌱"; 
+                    if (h.streak >= 30) streakIcon = "👑";
+                    else if (h.streak >= 21) streakIcon = "☄️";
+                    else if (h.streak >= 14) streakIcon = "💥";
+                    else if (h.streak >= 7) streakIcon = "🔥";
+                    else if (h.streak >= 3) streakIcon = "✨";
+
+                    const card = document.createElement('div');
+                    card.className = `habit-card ${isDone ? 'completed-card' : ''}`;
+                    card.innerHTML = `
+                        <button class="delete-btn" onclick="deleteQuest('${key}')"><i class="fa-solid fa-trash"></i></button>
+                        <h3 style="margin:0">${h.name}</h3>
+                        <div class="streak-badge">${streakIcon} ${h.streak} / ${h.goalDays} Days</div>
+                        <button class="mark-done-btn ${isDone ? 'completed-btn' : ''}" 
+                                onclick="${isDone ? '' : `incStreak('${key}', ${h.streak}, ${h.goalDays})`}">
+                                ${isDone ? '👑 COMPLETED QUEST' : 'Mark Done'}
+                        </button>`;
+                    list.appendChild(card);
+                });
+            }
+        });
+
+        window.incStreak = (id, cur, goal) => {
+            const newStreak = cur + 1;
+            
+            update(ref(db, `users/hero_01/habits/${id}`), { 
+                streak: newStreak
+            });
+
+            if (newStreak >= goal) {
+                confetti({ 
+                    particleCount: 150, 
+                    spread: 70, 
+                    origin: { y: 0.6 },
+                    colors: ['#ff6b00', '#ff3399', '#f59e0b']
+                });
+            }
+        };
+
+        window.addNewHabit = () => {
+            const n = prompt("Quest Title:");
+            const g = prompt("Goal Days (e.g., 30):");
+            if (n && g) {
+                push(ref(db, 'users/hero_01/habits'), { 
+                    name: n, 
+                    goalDays: parseInt(g), 
+                    streak: 0 
+                });
+            }
+        };
+
+        window.deleteQuest = (id) => {
+            if (confirm("Delete this quest?")) remove(ref(db, `users/hero_01/habits/${id}`));
+        };
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            if(confirm("End journey?")) signOut(auth).then(() => window.location.href = 'login.html');
+        });
+    </script>
+</body>
+</html>

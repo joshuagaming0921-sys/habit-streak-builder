@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Profile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --p-grad: linear-gradient(135deg, #ff6b00 0%, #ff3399 100%); --bg: #0f172a; }
+        body { display: flex; background: var(--bg); color: white; min-height: 100vh; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+        aside { width: 240px; height: 100vh; background: #1e293b; padding: 30px 20px; position: fixed; display: flex; flex-direction: column; z-index: 100; box-sizing: border-box; }
+        main { margin-left: 240px; flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 40px 20px; }
+        nav { display: flex; flex-direction: column; height: 100%; }
+        .nav-item { display: flex; align-items: center; padding: 12px 15px; color: #94a3b8; text-decoration: none; border-radius: 10px; margin-bottom: 5px; }
+        .nav-item.active { background: var(--p-grad); color: white; }
+        .logout-btn { width: 100%; background: none; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 12px; border-radius: 10px; cursor: pointer; text-align: left; margin-top: auto; display: flex; align-items: center; font-family: inherit; }
+        .stat-card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 40px; width: 100%; max-width: 400px; text-align: center; }
+        .circle { width: 160px; height: 160px; border-radius: 50%; border: 8px solid #ff6b00; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 900; margin: 25px auto; }
+        @media (max-width: 768px) {
+            aside { width: 100%; height: 75px; position: fixed; bottom: 0; top: auto; flex-direction: row; padding: 0; border-top: 1px solid rgba(255,255,255,0.1); }
+            aside h2 { display: none; }
+            nav { flex-direction: row; width: 100%; justify-content: space-around; }
+            main { margin-left: 0; padding-bottom: 100px; }
+            .nav-item, .logout-btn { flex-direction: column; font-size: 10px; padding: 5px; border: none; width: auto; margin: 0; background: none !important; }
+            .nav-item i, .logout-btn i { margin: 0 0 4px 0; font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <h2 style="font-weight: 900; margin-bottom: 30px; padding-left: 15px;">STREAK QUEST</h2>
+        <nav>
+            <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Home</span></a>
+            <a href="habits.html" class="nav-item"><i class="fa-solid fa-scroll"></i><span>Habits</span></a>
+            <a href="profile.html" class="nav-item active"><i class="fa-solid fa-user-shield"></i><span>Hero</span></a>
+            <a href="settings.html" class="nav-item"><i class="fa-solid fa-gear"></i><span>Settings</span></a>
+            <button id="logoutBtn" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></button>
+        </nav>
+    </aside>
+    <main>
+        <div class="stat-card">
+            <h1>Hero Mastery</h1>
+            <div class="circle" id="rate">0%</div>
+            <div id="rank" style="padding:12px 24px; background:var(--p-grad); border-radius:50px; font-weight:700; display: inline-block;">Analyzing...</div>
+        </div>
+    </main>
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        onValue(ref(db, 'users/hero_01/habits'), (snap) => {
+            const data = snap.val(); if (!data) return;
+            let target = 0, current = 0;
+            Object.values(data).forEach(h => { target += parseInt(h.goalDays) || 1; current += parseInt(h.streak) || 0; });
+            const rate = Math.min(Math.round((current / target) * 100), 100);
+            document.getElementById('rate').innerText = `${rate}%`;
+            document.getElementById('rank').innerText = rate >= 70 ? "Consistent Warrior" : "Rising Adventurer";
+        });
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            if(confirm("End journey?")) signOut(auth).then(() => window.location.href = 'login.html');
+        });
+    </script>
+</body>
+</html>
