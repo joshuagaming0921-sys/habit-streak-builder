@@ -40,14 +40,12 @@
 
         .logo-container { margin-bottom: 25px; }
 
-        .logo-icon { 
-            font-size: 55px; 
-            background: var(--p-grad); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
-            margin-bottom: 10px; 
-            display: inline-block; 
-            filter: drop-shadow(0 5px 15px rgba(255, 107, 0, 0.3)); 
+        /* Updated Styles for the New Logo */
+        .main-logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 15px rgba(45, 212, 191, 0.3)); /* Subtle glow to match the logo colors */
         }
 
         .logo-text { 
@@ -132,7 +130,7 @@
             justify-content: center; 
             gap: 12px; 
             font-weight: 600;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #e2e8h0;
         }
 
         #googleBtn:hover { 
@@ -150,7 +148,8 @@
 
     <div class="login-card">
         <div class="logo-container">
-            <div class="logo-icon"><i class="fa-solid fa-fire-rocket"></i></div>
+            <!-- Replacing the icon with the referenced logo.png -->
+            <img src="https://i.ibb.co/F415s6LM/logo-removebg-preview.png" width="500px" height="300px" alt="Streak Quest Logo" class="main-logo">
             <div class="logo-text">Habit "Streak" Builder</div>
             <p class="subtitle">An AI-Enhanced Behavioral Consistency System</p>
         </div>
@@ -188,20 +187,17 @@
 
         const ALLOWED_DOMAIN = "gordoncollege.edu.ph";
 
-        // Logic to verify if user email matches the school domain
         const verifyDomainAndRedirect = (user) => {
             if (user.email && user.email.endsWith(`@${ALLOWED_DOMAIN}`)) {
                 startSound.play();
                 setTimeout(() => window.location.href='dashboard.html', 1500);
             } else {
-                // Not a school account? Sign them out immediately.
                 signOut(auth).then(() => {
                     alert(`Access Denied: Please use your official @${ALLOWED_DOMAIN} account.`);
                 });
             }
         };
 
-        // Toggle button state based on checkbox
         checkbox.onchange = () => {
             const isChecked = checkbox.checked;
             loginBtn.disabled = !isChecked;
@@ -209,14 +205,12 @@
             loginBtn.style.color = isChecked ? 'white' : '#64748b';
         };
 
-        // Email/Pass Login
         loginBtn.onclick = () => {
             signInWithEmailAndPassword(auth, emailInput.value, passInput.value)
                 .then((result) => verifyDomainAndRedirect(result.user))
                 .catch(e => alert(e.message));
         };
 
-        // Google Login
         googleBtn.onclick = () => {
             if (!checkbox.checked) {
                 alert("Please accept the terms to continue.");
